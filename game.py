@@ -108,6 +108,25 @@ class SnakeGameAI:
 
         return False
 
+    def snake_loop_dir(self, pt=None):
+        if pt is None:
+            pt = self.head
+        if pt in self.snake[1:]:
+            collision_index = self.snake.index(pt)
+            loop_pt = self.snake[collision_index - 1]
+            if loop_pt.x > pt.x:
+                return 1
+            elif loop_pt.y < pt.y:
+                return 2
+            elif loop_pt.x < pt.x:
+                return 3
+            elif loop_pt.y > pt.y:
+                return 4
+        return 0
+        # return 0 if no loop
+        # return 1 if loop is to the right of collision point, return 2 if loop is below collision point, 
+        # return 3 if loop is to the left of collision point, return 4 if loop is above collision point
+
 
     def _update_ui(self):
         self.display.fill(BLACK)

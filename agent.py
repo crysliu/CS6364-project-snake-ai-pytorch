@@ -3,7 +3,7 @@ import random
 import numpy as np
 from collections import deque
 from game import SnakeGameAI, Direction, Point
-from model import Linear_QNet, QTrainer
+from model2 import Linear_QNet, QTrainer
 from helper import plot
 
 MAX_MEMORY = 100_000
@@ -17,17 +17,19 @@ class Agent:
         self.epsilon = 0 # randomness
         self.gamma = 0.9 # discount rate
         self.memory = deque(maxlen=MAX_MEMORY) # popleft()
-        self.model = Linear_QNet(11, 256, 3)
+        self.model = Linear_QNet(13, 256, 3)
         self.trainer = QTrainer(self.model, lr=LR, gamma=self.gamma)
 
 
     def get_state(self, game):
         head = game.snake[0]
+        # next location
         point_l = Point(head.x - 20, head.y)
         point_r = Point(head.x + 20, head.y)
         point_u = Point(head.x, head.y - 20)
         point_d = Point(head.x, head.y + 20)
         
+        # direction of snake head
         dir_l = game.direction == Direction.LEFT
         dir_r = game.direction == Direction.RIGHT
         dir_u = game.direction == Direction.UP
@@ -51,7 +53,19 @@ class Agent:
             (dir_u and game.is_collision(point_l)) or 
             (dir_r and game.is_collision(point_u)) or 
             (dir_l and game.is_collision(point_d)),
-            
+
+            # Snake loop right
+            (dir_r and game.snake_loop_dir(point_r) == 2) or
+            (dir_d and game.snake_loop_dir(point_d) == 3) or
+            (dir_l and game.snake_loop_dir(point_l) == 4) or
+            (dir_u and game.snake_loop_dir(point_u) == 1),
+
+            # snake loop left
+            (dir_r and game.snake_loop_dir(point_r) == 4) or
+            (dir_d and game.snake_loop_dir(point_d) == 1) or
+            (dir_l and game.snake_loop_dir(point_l) == 2) or
+            (dir_u and game.snake_loop_dir(point_u) == 3),
+
             # Move direction
             dir_l,
             dir_r,
