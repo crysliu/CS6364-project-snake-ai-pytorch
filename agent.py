@@ -20,6 +20,8 @@ class Agent:
         self.model = Linear_QNet(13, 256, 3)
         self.trainer = QTrainer(self.model, lr=LR, gamma=self.gamma)
 
+        # self.optimal_sample = deque(maxlen= BATCH_SIZE)
+
 
     def get_state(self, game):
         head = game.snake[0]
