@@ -3,7 +3,7 @@ import random
 import numpy as np
 from collections import deque
 from game import SnakeGameAI, Direction, Point
-from model2 import Linear_QNet, QTrainer
+from model13 import Linear_QNet, QTrainer
 from helper import plot
 
 MAX_MEMORY = 100_000
@@ -16,7 +16,7 @@ class Agent:
         self.n_games = 0
         self.epsilon = 0 # randomness
         self.gamma = 0.9 # discount rate
-        self.memory = deque(maxlen=MAX_MEMORY) # popleft()
+        self.memory = deque(maxlen=BATCH_SIZE) # popleft()
         self.model = Linear_QNet(13, 256, 3)
         self.trainer = QTrainer(self.model, lr=LR, gamma=self.gamma)
 
@@ -87,12 +87,9 @@ class Agent:
         self.memory.append((state, action, reward, next_state, done)) # popleft if MAX_MEMORY is reached
 
     def train_long_memory(self):
-        if len(self.memory) > BATCH_SIZE:
-            mini_sample = random.sample(self.memory, BATCH_SIZE) # list of tuples
-        else:
-            mini_sample = self.memory
+        sample = self.memory
 
-        states, actions, rewards, next_states, dones = zip(*mini_sample)
+        states, actions, rewards, next_states, dones = zip(*sample)
         self.trainer.train_step(states, actions, rewards, next_states, dones)
         #for state, action, reward, nexrt_state, done in mini_sample:
         #    self.trainer.train_step(state, action, reward, next_state, done)
@@ -156,7 +153,7 @@ def train():
             total_score += score
             mean_score = total_score / agent.n_games
             plot_mean_scores.append(mean_score)
-            plot(plot_scores, plot_mean_scores)
+            plot(plot_scores, plot_mean_scores, "Q-Net")
 
 
 if __name__ == '__main__':
