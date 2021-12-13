@@ -75,6 +75,8 @@ class QTrainer: #training and optimization
         for idx in range(len(done)):
             # find new Q-vals for each state
             Q_new = reward[idx]
+            print("reward: {}".format(reward[idx]))
+            print("target: {}".format(target.shape))
             # if state is not terminal
             if not done[idx]:
                 # preds[argmax(action)] = Q_new
@@ -86,6 +88,9 @@ class QTrainer: #training and optimization
             # target = target Q values
             # target of the current index and the argmax of current action
             # *******
+            print("action: {}".format(action[idx]))
+            print("argmax: {}".format(torch.argmax(action[idx]).item()))
+            print("Q new: {}".format(Q_new))
             target[idx][torch.argmax(action[idx]).item()] = Q_new
     
         # empty gradient

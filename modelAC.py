@@ -24,7 +24,7 @@ class ActorNet(nn.Module):
         file_name = os.path.join(model_folder_path, file_name)
         torch.save(self.state_dict(), file_name)
 
-class CriticNet(nn.Model):
+class CriticNet(nn.Module):
     def __init__(self, input_size, hidden_size, output_size):
         super().__init__()
         self.linear1 = nn.Linear(input_size, hidden_size)
@@ -44,10 +44,11 @@ class CriticNet(nn.Model):
         torch.save(self.state_dict(), file_name)
 
 class Actor_Trainer:
-    def __init__(self, actor_model, lr, gamma):
+    def __init__(self, actor_model, critic_model, lr, alpha):
         self.lr = lr
-        self.gamma = gamma
-        self.model = actor_model
+        self.alpha = alpha
+        self.actor_model = actor_model
+        self.critic_model = critic_model
         self.optimizer = optim.Adam(actor_model.parameters(), lr=self.lr)
         self.criterion = nn.MSELoss()
 
@@ -67,16 +68,21 @@ class Actor_Trainer:
             # reward = torch.unsqueeze(reward, 0)
             done = (done, )
 
-        # 1: predicted Q values with current state
-        pred = self.model(state)
-
+        # 1: predicted next action with current state
+        pred = self.actor_model(state)
         target = pred.clone()
+        print("target: {}".format(target.shape))
         for idx in range(len(done)):
-            # pi_new = reward[idx]
+            pi_new = 0
             if not done[idx]:
                 # pi_new = reward[idx] + self.gamma * torch.max(self.model(next_state[idx]))
-                pi_new = math.log(torch.max(self.model(state[idx])))
-
+                print("torch max: {}".format(torch.max(self.actor_model(next_state[idx]))))
+                print("critic model: {}".format(self.critic_model(state[idx])))
+                pi_new = self.alpha * torch.max(self.actor_model(state[idx])) * torch.max(self.critic_model(state[idx]))
+            
+            #target[idx][torch.argmax(action[idx]).item()] = Q_new
+            print("argmax: {}".format(torch.argmax(action[idx])))
+            print("pi new: {}".format(pi_new))
             target[idx][torch.argmax(action[idx]).item()] = pi_new
     
         # 2: Q_new = r + y * max(next_predicted Q value) -> only do this if not done
@@ -89,9 +95,9 @@ class Actor_Trainer:
         self.optimizer.step()
 
 class Critic_Trainer:
-    def __init__(self, model, lr, gamma):
+    def __init__(self, model, lr, beta):
         self.lr = lr
-        self.gamma = gamma
+        self.beta = beta
         self.model = model
         self.optimizer = optim.Adam(model.parameters(), lr=self.lr)
         self.criterion = nn.MSELoss()
@@ -118,7 +124,7 @@ class Critic_Trainer:
         for idx in range(len(done)):
             Q_new = reward[idx]
             if not done[idx]:
-                Q_new = reward[idx] + self.gamma * torch.max(self.model(next_state[idx]))
+                Q_new = reward[idx] + self.beta * torch.max(self.model(next_state[idx]))
 
             target[idx][torch.argmax(action[idx]).item()] = Q_new
     
