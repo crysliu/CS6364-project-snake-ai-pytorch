@@ -71,18 +71,18 @@ class Actor_Trainer:
         # 1: predicted next action with current state
         pred = self.actor_model(state)
         target = pred.clone()
-        print("target: {}".format(target.shape))
+        # print("target: {}".format(target.shape))
         for idx in range(len(done)):
             pi_new = 0
             if not done[idx]:
                 # pi_new = reward[idx] + self.gamma * torch.max(self.model(next_state[idx]))
-                print("torch max: {}".format(torch.max(self.actor_model(next_state[idx]))))
-                print("critic model: {}".format(self.critic_model(state[idx])))
+                # print("torch max: {}".format(torch.max(self.actor_model(next_state[idx]))))
+                # print("critic model: {}".format(self.critic_model(state[idx])))
                 pi_new = self.alpha * torch.max(self.actor_model(state[idx])) * torch.max(self.critic_model(state[idx]))
             
             #target[idx][torch.argmax(action[idx]).item()] = Q_new
-            print("argmax: {}".format(torch.argmax(action[idx])))
-            print("pi new: {}".format(pi_new))
+            # print("argmax: {}".format(torch.argmax(action[idx])))
+            # print("pi new: {}".format(pi_new))
             target[idx][torch.argmax(action[idx]).item()] = pi_new
     
         # 2: Q_new = r + y * max(next_predicted Q value) -> only do this if not done
