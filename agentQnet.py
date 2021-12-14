@@ -132,7 +132,7 @@ def train():
     plot_scores = []
     plot_mean_scores = []
     plot_mini_mean_scores = []
-    mini_score = deque(maxlen=100)
+    mini_score = deque(maxlen=200)
     total_score = 0
     record = 0
     agent = Agent()

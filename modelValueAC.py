@@ -92,13 +92,13 @@ class ACTrainer:
         # set predictions
         actor_pred = self.actor_model(state)
         critic_pred = self.critic_model(state)
-        val_pred = critic_pred.clone()
+        # val_pred = self.critic_model(state)
 
         # target = pred.clone()
         # set targets
         actor_target = actor_pred.clone()
         critic_target = critic_pred.clone()
-        val_target = val_pred.clone()
+        # val_target = val_pred.clone()
 
         for idx in range(len(done)):
             s = state[idx]
@@ -115,22 +115,26 @@ class ACTrainer:
             # log_pi.append(dist.log_prob(act2).unsqueeze(0))
             val = torch.max(self.critic_model(s))
             values.append(val)
-            val_target[idx][act] = val
+            # val_target[idx][act] = val
             
             # print("reward: {}".format(r))
-            Q_curr = self.critic_model(s)[act]
+            # Q_curr = self.critic_model(s)[act]
             Q_new = r
+            # val_new = r
             if not d:
-                Q_new = r + self.gamma * torch.max(self.critic_model(next_s))
+                next_val = torch.max(self.critic_model(next_s))
+                Q_new = r + self.gamma * next_val
+                # val_new = r + self.gamma * val
             
             # update targets 
-            actor_target[idx][act] = dist.log_prob(act).unsqueeze(0) * Q_curr
+            # val_target[idx] = val_new
+            # actor_target[idx][act] = dist.log_prob(act).unsqueeze(0) * Q_curr
             critic_target[idx][act] = Q_new
-            returns.append(Q_new)
+            # returns.append(Q_new)
 
         log_pi = torch.cat(log_pi)        
         
-        returns = torch.tensor(returns)
+        # returns = torch.tensor(returns)
         values = torch.tensor(values)
         # values = torch.tensor(values)
         # values = torch.cat(values)
@@ -139,7 +143,7 @@ class ACTrainer:
         advantage.requires_grad_(True)
         
         actor_loss = -(log_pi * advantage.detach()).mean()
-        critic_loss = self.critic_criterion(val_target, val_pred)
+        critic_loss = self.critic_criterion(critic_target, critic_pred)
 
         self.actor_optimizer.zero_grad()
         self.critic_optimizer.zero_grad()
