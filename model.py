@@ -40,6 +40,7 @@ class QTrainer: #training and optimization
     # train step function
     # state, action, reward -> stored parameters from last time
     def train_step(self, state, action, reward, next_state, done):
+        # print("action: {}".format(action))
         # convert input parameters to pytorch tensors
         state = torch.tensor(state, dtype=torch.float)
         next_state = torch.tensor(next_state, dtype=torch.float)
@@ -75,8 +76,8 @@ class QTrainer: #training and optimization
         for idx in range(len(done)):
             # find new Q-vals for each state
             Q_new = reward[idx]
-            print("reward: {}".format(reward[idx]))
-            print("target: {}".format(target.shape))
+            # print("reward: {}".format(reward[idx]))
+            # print("target: {}".format(target.shape))
             # if state is not terminal
             if not done[idx]:
                 # preds[argmax(action)] = Q_new
@@ -88,9 +89,9 @@ class QTrainer: #training and optimization
             # target = target Q values
             # target of the current index and the argmax of current action
             # *******
-            print("action: {}".format(action[idx]))
-            print("argmax: {}".format(torch.argmax(action[idx]).item()))
-            print("Q new: {}".format(Q_new))
+            # print("action: {}".format(action[idx]))
+            # print("argmax: {}".format(torch.argmax(action[idx]).item()))
+            # print("Q new: {}".format(Q_new))
             target[idx][torch.argmax(action[idx]).item()] = Q_new
     
         # empty gradient
@@ -99,6 +100,7 @@ class QTrainer: #training and optimization
         # target: Q_new
         # pred: Q
         loss = self.criterion(target, pred)
+        # print("loss: {}".format(loss))
         # apply backpropagation to update gradients
         loss.backward()
 

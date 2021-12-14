@@ -51,6 +51,8 @@ class SnakeGameAI:
         self.food = None
         self._place_food()
         self.frame_iteration = 0
+        self.steps = []
+        self.MAX_STEPS = (self.w/BLOCK_SIZE) * (self.h/BLOCK_SIZE)
 
 
     def _place_food(self):
@@ -76,7 +78,14 @@ class SnakeGameAI:
         # 3. check if game over
         reward = 0
         game_over = False
+        # if self.is_collision() or self.frame_iteration > 100*len(self.snake) or self.steps > self.MAX_STEPS:
         if self.is_collision() or self.frame_iteration > 100*len(self.snake):
+            # if self.head in self.snake[1:]:
+            #     print("\tself collision")
+            # # elif self.frame_iteration > 100*len(self.snake):
+            # #     print("\ttook too long")
+            # else:
+            #     print("\tborder collision")
             game_over = True
             reward = -100
             return reward, game_over, self.score
@@ -84,10 +93,10 @@ class SnakeGameAI:
         # 4. place new food or just move
         if self.head == self.food:
             self.score += 1
-            reward = 100
+            reward = 500
             self._place_food()
         else:
-            # reward = -1
+            reward = -1
             self.snake.pop()
         
         # 5. update ui and clock
@@ -96,6 +105,10 @@ class SnakeGameAI:
         # 6. return game over and score
         return reward, game_over, self.score
 
+    def traversed_step(self, pt=None):
+        if pt is None:
+            pt = self.head
+        return pt in self.steps
 
     def is_collision(self, pt=None):
         if pt is None:
@@ -170,5 +183,5 @@ class SnakeGameAI:
             y += BLOCK_SIZE
         elif self.direction == Direction.UP:
             y -= BLOCK_SIZE
-
+        self.steps.append(Point(x,y))
         self.head = Point(x, y)

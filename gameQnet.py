@@ -51,6 +51,8 @@ class SnakeGameAI:
         self.food = None
         self._place_food()
         self.frame_iteration = 0
+        self.steps = []
+        self.MAX_STEPS = (self.w/BLOCK_SIZE) * (self.h/BLOCK_SIZE)
 
 
     def _place_food(self):
@@ -87,7 +89,7 @@ class SnakeGameAI:
             reward = 100
             self._place_food()
         else:
-            # reward = -1
+            reward = -1
             self.snake.pop()
         
         # 5. update ui and clock
@@ -96,6 +98,10 @@ class SnakeGameAI:
         # 6. return game over and score
         return reward, game_over, self.score
 
+    def traversed_step(self, pt=None):
+        if pt is None:
+            pt = self.head
+        return pt in self.steps
 
     def is_collision(self, pt=None):
         if pt is None:
@@ -171,4 +177,5 @@ class SnakeGameAI:
         elif self.direction == Direction.UP:
             y -= BLOCK_SIZE
 
+        self.steps.append(Point(x,y))
         self.head = Point(x, y)

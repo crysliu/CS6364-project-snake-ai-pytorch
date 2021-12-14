@@ -2,10 +2,9 @@ import torch
 import random
 import numpy as np
 from collections import deque
-from game import SnakeGameAI, Direction, Point
-from modelAC import ActorNet, CriticNet, Actor_Trainer, Critic_Trainer
+from gameQnet import SnakeGameAI, Direction, Point
+from modelQnet import Linear_QNet, QTrainer
 from helper import plot
-import time
 
 MAX_MEMORY = 100_000
 BATCH_SIZE = 1000
@@ -16,14 +15,10 @@ class Agent:
     def __init__(self):
         self.n_games = 0
         self.epsilon = 0 # randomness
-        self.beta = 0.9 # discount rate
-        self.alpha = 0.95
+        self.gamma = 0.9 # discount rate
         self.memory = deque(maxlen=MAX_MEMORY) # popleft()
-
-        self.actor_model = ActorNet(13, 256, 3)
-        self.critic_model = CriticNet(13, 256, 3)
-        self.actor_trainer = Actor_Trainer(self.actor_model, self.critic_model, lr=LR, alpha = self.alpha)
-        self.critic_trainer = Critic_Trainer(self.critic_model, lr = LR, beta = self.beta)
+        self.model = Linear_QNet(16, 256, 3)
+        self.trainer = QTrainer(self.model, lr=LR, gamma=self.gamma)
 
     def get_state(self, game):
         head = game.snake[0]
@@ -70,6 +65,24 @@ class Agent:
             (dir_l and game.snake_loop_dir(point_l) == 2) or
             (dir_u and game.snake_loop_dir(point_u) == 3),
 
+            # left traversed before
+            (dir_r and game.traversed_step(point_u)) or
+            (dir_d and game.traversed_step(point_r)) or
+            (dir_l and game.traversed_step(point_d)) or
+            (dir_u and game.traversed_step(point_l)),
+
+            # right traversed before
+            (dir_r and game.traversed_step(point_d)) or
+            (dir_d and game.traversed_step(point_l)) or
+            (dir_l and game.traversed_step(point_u)) or
+            (dir_u and game.traversed_step(point_r)),
+
+            # forward traversed before
+            (dir_r and game.traversed_step(point_r)) or
+            (dir_d and game.traversed_step(point_d)) or
+            (dir_l and game.traversed_step(point_l)) or
+            (dir_u and game.traversed_step(point_u)),
+            
             # Move direction
             dir_l,
             dir_r,
@@ -95,16 +108,12 @@ class Agent:
             mini_sample = self.memory
 
         states, actions, rewards, next_states, dones = zip(*mini_sample)
-
-        self.actor_trainer.train_step(states, actions, next_states, dones)
-        self.critic_trainer.train_step(states, actions, rewards, next_states, dones)
-
+        self.trainer.train_step(states, actions, rewards, next_states, dones)
         #for state, action, reward, nexrt_state, done in mini_sample:
         #    self.trainer.train_step(state, action, reward, next_state, done)
 
     def train_short_memory(self, state, action, reward, next_state, done):
-        self.actor_trainer.train_step(state, action, next_state, done)
-        self.critic_trainer.train_step(state, action, reward, next_state, done)
+        self.trainer.train_step(state, action, reward, next_state, done)
 
     def get_action(self, state):
         # random moves: tradeoff exploration / exploitation
@@ -117,7 +126,7 @@ class Agent:
             state0 = torch.tensor(state, dtype=torch.float)
             # prediction executes forward function in model
             # predicts next action
-            prediction = self.actor_model(state0)
+            prediction = self.model(state0)
             # prediction = tensor of Q values for each action
             # convert prediction to an actual move for next state
             # move is the index of the action with the highest Q-value
@@ -131,12 +140,15 @@ class Agent:
 def train():
     plot_scores = []
     plot_mean_scores = []
+    plot_mini_mean_scores = []
+    mini_score = deque(maxlen=100)
     total_score = 0
     record = 0
     agent = Agent()
     game = SnakeGameAI()
 
-    while True:
+    # while True:
+    while agent.n_games < 2000:
         # get old state
         state_old = agent.get_state(game)
 
@@ -161,16 +173,18 @@ def train():
 
             if score > record:
                 record = score
-                agent.actor_model.save()
-                agent.critic_model.save()
+                agent.model.save()
 
             print('Game', agent.n_games, 'Score', score, 'Record:', record)
 
             plot_scores.append(score)
+            mini_score.append(score)
             total_score += score
             mean_score = total_score / agent.n_games
+            mini_mean_score = sum(mini_score)/len(mini_score)
             plot_mean_scores.append(mean_score)
-            plot(plot_scores, plot_mean_scores, "Q-Net with Experience Replay and Actor (Q-Net) Critic")
+            plot_mini_mean_scores.append(mini_mean_score)
+            plot(plot_scores, plot_mean_scores, plot_mini_mean_scores, "Q-Net with Experience Replay")
 
 if __name__ == '__main__':
     train()
