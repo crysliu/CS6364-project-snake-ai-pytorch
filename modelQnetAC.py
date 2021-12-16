@@ -98,6 +98,16 @@ class ACTrainer:
         actor_target = actor_pred.clone()
         critic_target = critic_pred.clone()
 
+        last_s = next_state[-1]
+        R = torch.max(self.critic_model(last_s))
+        returns2 = []
+
+        for idx in reversed(range(len(done))):
+            R = reward[idx]
+            if not done[idx]:
+                R = reward[idx] + self.gamma * R
+            returns2.insert(0, R)
+
         for idx in range(len(done)):
             s = state[idx]
             a = action[idx]
@@ -109,8 +119,6 @@ class ACTrainer:
             act =torch.argmax(a)
             # action type : torch.LongTensor
             log_pi.append(dist.log_prob(act).unsqueeze(0))
-           
-            # log_pi.append(dist.log_prob(act2).unsqueeze(0))
             values.append(torch.max(self.critic_model(s)))
             
             # print("reward: {}".format(r))
@@ -126,12 +134,11 @@ class ACTrainer:
 
         log_pi = torch.cat(log_pi)        
         
+        returns2 = torch.tensor(returns2)
         returns = torch.tensor(returns)
         values = torch.tensor(values)
-        # values = torch.tensor(values)
-        # values = torch.cat(values)
-        # advantage = returns - values
-        advantage = returns
+        advantage = returns - values
+        # advantage = returns
         advantage.requires_grad_(True)
         
         actor_loss = -(log_pi * advantage.detach()).mean()

@@ -181,7 +181,7 @@ def train():
             # train long memory, plot result
             game.reset()
             agent.n_games += 1
-            agent.train_long_memory()
+            # agent.train_long_memory()
 
             if score > record:
                 record = score
@@ -194,10 +194,14 @@ def train():
             mini_score.append(score)
             total_score += score
             mean_score = total_score / agent.n_games
+
+            if score > mean_score or agent.n_games%10 == 0:
+                agent.train_long_memory()
+
             mini_mean_score = sum(mini_score)/len(mini_score)
             plot_mean_scores.append(mean_score)
             plot_mini_mean_scores.append(mini_mean_score)
-            plot(plot_scores, plot_mean_scores, plot_mini_mean_scores, "Actor (Q-Net) Critic")
+            plot(plot_scores, plot_mean_scores, plot_mini_mean_scores, "Actor (Q-Net) Critic 2")
 
 if __name__ == '__main__':
     train()
