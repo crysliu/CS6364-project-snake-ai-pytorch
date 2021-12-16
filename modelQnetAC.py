@@ -130,8 +130,8 @@ class ACTrainer:
         values = torch.tensor(values)
         # values = torch.tensor(values)
         # values = torch.cat(values)
-        # advantage = returns - values
-        advantage = returns
+        advantage = returns - values
+        # advantage = returns
         advantage.requires_grad_(True)
         
         actor_loss = -(log_pi * advantage.detach()).mean()
